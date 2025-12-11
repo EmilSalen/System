@@ -44,7 +44,11 @@
               <EmptySpace min="-2" pref="61" max="-2" attributes="0"/>
           </Group>
           <Component id="jScrollPane1" alignment="0" pref="1293" max="32767" attributes="0"/>
-          <Component id="BarPanel" alignment="1" max="32767" attributes="0"/>
+          <Group type="102" alignment="1" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="BarPanel" max="32767" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
@@ -55,8 +59,8 @@
               <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
               <Component id="cmbTblReport" min="-2" max="-2" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Component id="jScrollPane1" min="-2" pref="184" max="-2" attributes="0"/>
-              <EmptySpace pref="295" max="32767" attributes="0"/>
+              <Component id="jScrollPane1" min="-2" pref="259" max="-2" attributes="0"/>
+              <EmptySpace pref="220" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>

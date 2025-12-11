@@ -36,6 +36,7 @@ public class Form2Menu extends javax.swing.JPanel {
      
      
      
+   private int hoveredRow = -1;
 
    private Form22Menu form22;
    private Customer selectedCustomer;
@@ -50,11 +51,22 @@ public class Form2Menu extends javax.swing.JPanel {
     setCustomTableModel(); 
     loadCustomers();  
     loadDeliveries();
+    
 
-    enableDeleteKey(); 
+    
+
+ 
+    enablesDeleteKey(); 
     enableTableEditing(); 
     setupPlaceholder(); 
     setupSearch();
+    
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>((DefaultTableModel) tblDelivery.getModel());
+        tblDelivery.setRowSorter(sorter);
+
+        
+    
+    
      JPanel formPanel = new JPanel();
 formPanel.setBorder(new LineBorder(Color.LIGHT_GRAY, 1, true));
    
@@ -62,6 +74,18 @@ formPanel.setBorder(new LineBorder(Color.LIGHT_GRAY, 1, true));
         
         
         
+StatusColorRenderer renderer = new StatusColorRenderer();
+
+
+for (int i = 0; i < tblDelivery.getColumnCount(); i++) {
+    tblDelivery.getColumnModel().getColumn(i).setCellRenderer(renderer);
+}
+
+
+
+
+
+
         
         
         
@@ -77,6 +101,80 @@ formPanel.setBorder(new LineBorder(Color.LIGHT_GRAY, 1, true));
         jComboBox2.addActionListener(e -> updateCustomerFieldsFromCombo());
         
         
+        
+        //here
+        
+        tblDelivery.addMouseListener(new java.awt.event.MouseAdapter() {
+    @Override
+    public void mouseClicked(java.awt.event.MouseEvent evt) {
+        int row = tblDelivery.getSelectedRow();
+        if (row != -1) {
+            txtCustomerName.setText(tblDelivery.getValueAt(row, 2).toString());
+            jTextPane3.setText(tblDelivery.getValueAt(row, 3).toString());
+            cmbStatus.setSelectedItem(tblDelivery.getValueAt(row, 4).toString());
+            txtDate.setText(tblDelivery.getValueAt(row, 5).toString());
+        }
+    }
+});
+
+        
+        cmbStatus.addKeyListener(new java.awt.event.KeyAdapter() {
+    @Override
+    public void keyPressed(java.awt.event.KeyEvent evt) {
+        if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+            updateStatus();
+        }
+    }
+});
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        tblDelivery.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+    @Override
+    public void mouseMoved(java.awt.event.MouseEvent e) {
+        hoveredRow = tblDelivery.rowAtPoint(e.getPoint());
+        tblDelivery.repaint();
+    }
+});
+
+tblDelivery.addMouseListener(new java.awt.event.MouseAdapter() {
+    @Override
+    public void mouseExited(java.awt.event.MouseEvent e) {
+        hoveredRow = -1;
+        tblDelivery.repaint();
+    }
+});
+
+        
+        
+        
+        
+        
+        
+        
+        
+    
+        
+        
+        
+        
+        
+        
+        
     }
 
     
@@ -84,6 +182,28 @@ Connection con;
 PreparedStatement pst;
 ResultSet rs;
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -194,7 +314,9 @@ public void insertDeliveryIntoDB(String deliveryID, int customerID, String custo
 
 
 public void loadDeliveries() {
-    String sql = "SELECT delivery_code, customer_id, customer_name, address,  delivery_date, status FROM deliveries";
+    String sql = "SELECT delivery_code, customer_id, customer_name, address, delivery_date, status "
+               + "FROM deliveries "
+               + "ORDER BY CAST(SUBSTRING(delivery_code, 3) AS UNSIGNED) DESC";
 
     try {
         PreparedStatement pst = con.prepareStatement(sql);
@@ -207,10 +329,10 @@ public void loadDeliveries() {
             String deliveryCode = rs.getString("delivery_code");
             int customerID = rs.getInt("customer_id");
             String customerName = rs.getString("customer_name");
-            String address = rs.getString("address"); 
+            String address = rs.getString("address");
             String date = rs.getString("delivery_date");
-             String status = rs.getString("status");
-             
+            String status = rs.getString("status");
+
             model.addRow(new Object[]{
                 deliveryCode,
                 customerID,
@@ -230,6 +352,85 @@ public void loadDeliveries() {
 }
 
 
+
+
+
+
+
+private void updateStatus() {
+    int row = tblDelivery.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Please select a delivery.");
+        return;
+    }
+
+    String newStatus = cmbStatus.getSelectedItem().toString();
+    String deliveryCode = tblDelivery.getValueAt(row, 0).toString();
+
+    try (Connection conn = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/DashboardSystem",
+            "skyGarden",
+            "@Asterisk2444"
+        )) {
+
+        // -------------------------------------------------
+        // 1. UPDATE DELIVERY STATUS
+        // -------------------------------------------------
+        String sql = "UPDATE deliveries SET status = ? WHERE delivery_code = ?";
+        PreparedStatement p = conn.prepareStatement(sql);
+        p.setString(1, newStatus);
+        p.setString(2, deliveryCode);
+        p.executeUpdate();
+
+        // Update table UI
+        tblDelivery.setValueAt(newStatus, row, 4);
+
+        // -------------------------------------------------
+        // 2. INSERT LOG ENTRY
+        // -------------------------------------------------
+        String logSql = "INSERT INTO logs (action_type, description, timestamp) "
+                      + "VALUES (?, ?, NOW())";
+
+        PreparedStatement log = conn.prepareStatement(logSql);
+
+        switch (newStatus.toLowerCase()) {
+            case "complete":
+                log.setString(1, "Delivery Completed");
+                log.setString(2, "Marked Delivery #" + deliveryCode + " as Completed");
+                break;
+
+            case "failed":
+                log.setString(1, "Delivery Failed");
+                log.setString(2, "Marked Delivery #" + deliveryCode + " as Failed");
+                break;
+
+            case "pending":
+                log.setString(1, "Delivery Pending");
+                log.setString(2, "Marked Delivery #" + deliveryCode + " as Pending");
+                break;
+
+            default:
+                log.setString(1, "Status Updated");
+                log.setString(2, "Updated Delivery #" + deliveryCode + " to " + newStatus);
+        }
+
+        log.executeUpdate();
+
+        // -------------------------------------------------
+        // 3. REFRESH LOG TABLE IN FORM1 (if open)
+        // -------------------------------------------------
+        try {
+            Form1Menu.instance.loadLogsTable();
+        } catch (Exception ignore) {
+            // Form1 not opened — ignore
+        }
+
+        JOptionPane.showMessageDialog(this, "Status updated successfully!");
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
 
 
 
@@ -303,32 +504,60 @@ public void enableTableEditing() {
 
 
 
-private void enableDeleteKey() {
-    customerTable.addKeyListener(new java.awt.event.KeyAdapter() {
+private void enablesDeleteKey() {
+    tblDelivery.addKeyListener(new java.awt.event.KeyAdapter() {
         @Override
         public void keyPressed(java.awt.event.KeyEvent evt) {
+
             if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_DELETE) {
-                int row = customerTable.getSelectedRow();
+
+                int row = tblDelivery.getSelectedRow();
                 if (row == -1) return;
 
-                int id = (int) customerTable.getValueAt(row, 0);
+                String deliveryCode = tblDelivery.getValueAt(row, 0).toString();
 
                 int confirm = JOptionPane.showConfirmDialog(
-                    null,
-                    "Delete customer ID " + id + "?",
-                    "Confirm Delete",
-                    JOptionPane.YES_NO_OPTION
+                        null,
+                        "Delete delivery: " + deliveryCode + "?",
+                        "Confirm Delete",
+                        JOptionPane.YES_NO_OPTION
                 );
 
                 if (confirm == JOptionPane.YES_OPTION) {
                     try {
-                        pst = con.prepareStatement("DELETE FROM customers WHERE customer_id=?");
-                        pst.setInt(1, id);
+                        Connection conn = DriverManager.getConnection(
+                                "jdbc:mysql://localhost:3306/DashboardSystem",
+                                "skyGarden",
+                                "@Asterisk2444"
+                        );
+
+                        PreparedStatement pst = conn.prepareStatement(
+                                "DELETE FROM deliveries WHERE delivery_code = ?"
+                        );
+
+                        pst.setString(1, deliveryCode);
                         pst.executeUpdate();
 
-                        ((DefaultTableModel) customerTable.getModel()).removeRow(row);
+                        // Remove from UI
+                        ((DefaultTableModel) tblDelivery.getModel()).removeRow(row);
 
-                    } catch (SQLException ex) {
+                        JOptionPane.showMessageDialog(null, "Delivery deleted.");
+
+                        // ---------------------------------------
+                        // ⭐ LOGGING CODE (DELETE ACTION)
+                        // ---------------------------------------
+                        String logSql = "INSERT INTO logs (action_type, description, timestamp) VALUES (?, ?, NOW())";
+                        PreparedStatement logPst = conn.prepareStatement(logSql);
+
+                        logPst.setString(1, "Delivery Deleted");
+                        logPst.setString(2, "Deleted Delivery #" + deliveryCode);
+                        logPst.executeUpdate();
+
+                        // Refresh Form1 logs instantly
+                        Form1Menu.instance.loadLogsTable();
+                        // ---------------------------------------
+
+                    } catch (Exception ex) {
                         JOptionPane.showMessageDialog(null, "Delete failed: " + ex.getMessage());
                     }
                 }
@@ -336,6 +565,17 @@ private void enableDeleteKey() {
         }
     });
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 public void loadCustomerTable() {
@@ -418,6 +658,61 @@ private void updateCustomerFieldsFromCombo() {
 
 
 
+class StatusColorRenderer extends javax.swing.table.DefaultTableCellRenderer {
+
+    @Override
+    public java.awt.Component getTableCellRendererComponent(
+            javax.swing.JTable table, Object value, boolean isSelected,
+            boolean hasFocus, int row, int column) {
+
+        java.awt.Component c = super.getTableCellRendererComponent(
+                table, value, isSelected, hasFocus, row, column);
+
+        String status = table.getValueAt(row, 4).toString().trim().toLowerCase();
+
+        // Debug (optional)
+        // System.out.println("STATUS = [" + status + "]");
+
+        // HOVER
+        if (row == hoveredRow && !isSelected) {
+            c.setBackground(new java.awt.Color(230, 230, 230));
+            return c;
+        }
+
+        if (!isSelected) {
+
+            if (status.contains("complete")) {
+                c.setBackground(new java.awt.Color(198, 239, 206)); // green
+
+            } else if (status.contains("fail")) {
+                c.setBackground(new java.awt.Color(255, 199, 206)); // red
+
+            } else if (status.contains("pending") ||
+                       status.contains("progress") ||
+                       status.contains("hold")) {
+
+                c.setBackground(new java.awt.Color(255, 235, 156)); // yellow
+
+            } else {
+                c.setBackground(java.awt.Color.WHITE);
+            }
+
+            c.setForeground(java.awt.Color.BLACK);
+        }
+
+        return c;
+    }
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -441,8 +736,6 @@ public String generateDeliveryID() {
     }
     return newID;
 }
-
-
 
 
 
@@ -487,6 +780,7 @@ public String generateDeliveryID() {
         txtCustomerName = new javax.swing.JTextField();
         jTextPane3 = new javax.swing.JTextField();
         txtDate = new javax.swing.JTextField();
+        cmbFilter = new javax.swing.JComboBox<>();
 
         setBackground(new java.awt.Color(255, 255, 255));
 
@@ -576,7 +870,6 @@ public String generateDeliveryID() {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1100, Short.MAX_VALUE)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(30, 30, 30)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -588,43 +881,50 @@ public String generateDeliveryID() {
                     .addComponent(txtPhone)
                     .addComponent(txtName)
                     .addComponent(txtAddress, javax.swing.GroupLayout.DEFAULT_SIZE, 374, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(18, 18, 18)
+                        .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(54, 54, 54)
                         .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(18, 18, 18)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(171, Short.MAX_VALUE))
             .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 1100, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1)
+                .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel3)
-                        .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel11)
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(25, 25, 25)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel4)
-                    .addComponent(txtPhone, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(25, 25, 25)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(31, 31, 31)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel11))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 45, Short.MAX_VALUE)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel3))
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(txtPhone, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel4))
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(txtAddress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel5)
-                            .addComponent(txtAddress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(5, 5, 5))
-                    .addComponent(btnAdd))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 323, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(79, Short.MAX_VALUE))
+                            .addComponent(btnAdd))
+                        .addGap(29, 29, 29)))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 333, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(26, 26, 26))
         );
 
         tabManagement.addTab("Customer Management", jPanel1);
@@ -688,7 +988,7 @@ public String generateDeliveryID() {
 
         cmbStatus.setBackground(new java.awt.Color(255, 255, 255));
         cmbStatus.setForeground(new java.awt.Color(0, 0, 0));
-        cmbStatus.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Pending ", "Complete" }));
+        cmbStatus.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Pending ", "Complete", "Failed" }));
 
         jComboBox2.setBackground(new java.awt.Color(255, 255, 255));
 
@@ -727,6 +1027,15 @@ public String generateDeliveryID() {
 
         txtDate.setBackground(new java.awt.Color(255, 255, 255));
 
+        cmbFilter.setBackground(new java.awt.Color(255, 255, 255));
+        cmbFilter.setForeground(new java.awt.Color(0, 0, 0));
+        cmbFilter.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "All", "Pending ", "Complete", "Failed" }));
+        cmbFilter.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbFilterActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -734,7 +1043,7 @@ public String generateDeliveryID() {
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 1088, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 1094, Short.MAX_VALUE)
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addGroup(jPanel2Layout.createSequentialGroup()
@@ -760,7 +1069,9 @@ public String generateDeliveryID() {
                                 .addComponent(jButton1)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(btnPopup)))
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGap(551, 551, 551)
+                        .addComponent(cmbFilter, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
             .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
@@ -772,7 +1083,7 @@ public String generateDeliveryID() {
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel6))
-                .addGap(20, 20, 20)
+                .addGap(25, 25, 25)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel7)
                     .addComponent(txtCustomerName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -785,16 +1096,21 @@ public String generateDeliveryID() {
                     .addComponent(cmbStatus, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel9))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel10)
-                    .addComponent(txtDate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel10)
+                            .addComponent(txtDate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(18, 18, 18))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                        .addComponent(cmbFilter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(9, 9, 9)))
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
                     .addComponent(btnPopup))
-                .addGap(17, 17, 17)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 187, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(87, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 17, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 253, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(16, 16, 16))
         );
 
         tabManagement.addTab("Delivery Management", jPanel2);
@@ -857,9 +1173,14 @@ if (selected != null) {
     }//GEN-LAST:event_btnPopupActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-     DefaultTableModel model = (DefaultTableModel) tblDelivery.getModel();
-
-
+   
+        
+        
+        
+        
+        
+        
+    DefaultTableModel model = (DefaultTableModel) tblDelivery.getModel();
     String deliveryID = generateDeliveryID();
 
     Object sel = jComboBox2.getSelectedItem();
@@ -873,14 +1194,13 @@ if (selected != null) {
         JOptionPane.showMessageDialog(this, "Invalid customer selection.");
         return;
     }
+
     String[] parts = selected.split(" - ", 2);
     String customerIdStr = parts[0].trim();
     String customerNameFromCombo = parts.length > 1 ? parts[1].trim() : "";
 
-
     String customerName = txtCustomerName.getText().trim();
     if (customerName.isEmpty()) {
-
         customerName = customerNameFromCombo;
     }
 
@@ -913,15 +1233,16 @@ if (selected != null) {
         return;
     }
 
-    
+    // INSERT DELIVERY INTO DB
     String sql = "INSERT INTO deliveries (delivery_code, customer_id, customer_name, address, delivery_date, status) "
-               + "VALUES (?, ?, ?, ?, ?, ?)";
+            + "VALUES (?, ?, ?, ?, ?, ?)";
+
     try (PreparedStatement pst = con.prepareStatement(sql)) {
+
         pst.setString(1, deliveryID);
         pst.setInt(2, customerID);
         pst.setString(3, customerName);
         pst.setString(4, address);
-
 
         try {
             java.util.Date utilDate = new java.text.SimpleDateFormat("yyyy-MM-dd").parse(date);
@@ -932,13 +1253,33 @@ if (selected != null) {
 
         pst.setString(6, status);
         pst.executeUpdate();
+
+        // -----------------------------------------------------
+        // ⭐ INSERT LOG ENTRY
+        // -----------------------------------------------------
+        String logSql = "INSERT INTO logs (action_type, description, timestamp) VALUES (?, ?, NOW())";
+        PreparedStatement logPst = con.prepareStatement(logSql);
+
+        logPst.setString(1, "Delivery Created");
+        logPst.setString(2, "Created Delivery #" + deliveryID + " for " + customerName);
+        logPst.executeUpdate();
+
+        // -----------------------------------------------------
+        // ⭐ Refresh Form1 logs table if it's currently open
+        // -----------------------------------------------------
+        try {
+            Form1Menu.instance.loadLogsTable();
+        } catch (Exception ex) {
+            // Safe to ignore if Form1 not yet visible
+        }
+
     } catch (SQLException e) {
         JOptionPane.showMessageDialog(this, "Database Error: " + e.getMessage());
         e.printStackTrace();
         return;
     }
 
-  
+    // ADD TO TABLE UI
     model.insertRow(0, new Object[]{
         deliveryID,
         customerID,
@@ -948,13 +1289,22 @@ if (selected != null) {
         date
     });
 
-
     jComboBox2.setSelectedIndex(0);
     txtCustomerName.setText("");
     jTextPane3.setText("");
     cmbStatus.setSelectedIndex(0);
 
     JOptionPane.showMessageDialog(this, "Delivery Added!");
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
 
     }//GEN-LAST:event_jButton1ActionPerformed
@@ -997,6 +1347,23 @@ if (selected != null) {
         }
     }//GEN-LAST:event_btnAddActionPerformed
 
+    private void cmbFilterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbFilterActionPerformed
+       String selected = cmbFilter.getSelectedItem().toString();
+
+    TableRowSorter<DefaultTableModel> sorter =
+            (TableRowSorter<DefaultTableModel>) tblDelivery.getRowSorter();
+
+    if (selected.equals("All")) {
+        sorter.setRowFilter(null);
+    } else {
+       sorter.setRowFilter(RowFilter.regexFilter("(?i).*" + selected.trim() + ".*", 4));
+
+
+ 
+      
+    }
+    }//GEN-LAST:event_cmbFilterActionPerformed
+
 
     
     public void reloadCustomerComboBox() {
@@ -1011,6 +1378,33 @@ if (selected != null) {
     jComboBox2.setSelectedIndex(0);
 }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1146,6 +1540,7 @@ private void setupPlaceholder() {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnPopup;
+    private javax.swing.JComboBox<String> cmbFilter;
     private javax.swing.JComboBox<String> cmbStatus;
     private javax.swing.JTable customerTable;
     private javax.swing.JButton jButton1;
