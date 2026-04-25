@@ -237,6 +237,115 @@ export function deleteProduct(id) {
   return Promise.resolve({ success: true });
 }
 
-export function saveOrder(order) {
-  return Promise.resolve({ success: true });
+// Shared storage key for orders (used by both store and admin)
+const ORDERS_STORAGE_KEY = 'cyber_store_orders';
+
+/**
+ * Get all orders from localStorage
+ * Returns array of order objects
+ */
+export function getOrders() {
+  const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error parsing stored orders:', e);
+      return [];
+    }
+  }
+  return [];
+}
+
+/**
+ * Generate next order ID (ORD-1001, ORD-1002, etc.)
+ */
+function generateOrderId() {
+  const orders = getOrders();
+  if (orders.length === 0) {
+    return 'ORD-1001';
+  }
+  
+  // Find highest order number
+  let highestNum = 1000;
+  orders.forEach(order => {
+    if (order.id && order.id.startsWith('ORD-')) {
+      const num = parseInt(order.id.replace('ORD-', ''));
+      if (num > highestNum) {
+        highestNum = num;
+      }
+    }
+  });
+  
+  return 'ORD-' + (highestNum + 1);
+}
+
+/**
+ * Save a new order to localStorage
+ * @param {Object} orderData - Order data from checkout
+ * @returns {Promise} Resolves with { success: true, order: orderObject }
+ */
+export function saveOrder(orderData) {
+  const orders = getOrders();
+  
+  // Create complete order object
+  const order = {
+    id: generateOrderId(),
+    customerName: orderData.customerName || 'Guest',
+    username: orderData.username || '',
+    customerEmail: orderData.customerEmail || '',
+    customerPhone: orderData.customerPhone || '',
+    products: orderData.items || orderData.products || [],
+    totalPrice: orderData.total || orderData.totalPrice || 0,
+    paymentMethod: orderData.paymentMethod || 'Cash',
+    shippingAddress: orderData.shippingAddress || orderData.address || '',
+    orderDate: orderData.orderDate || new Date().toISOString().split('T')[0],
+    orderTime: orderData.orderTime || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    orderStatus: orderData.orderStatus || 'Pending',
+    paymentStatus: orderData.paymentStatus || 'Unpaid',
+    notes: orderData.notes || '',
+    createdAt: new Date().toISOString()
+  };
+  
+  orders.push(order);
+  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+  
+  console.log('Order saved:', order);
+  return Promise.resolve({ success: true, order });
+}
+
+/**
+ * Update an existing order (usually status update)
+ * @param {string} orderId - Order ID to update
+ * @param {Object} updateData - Data to update
+ * @returns {Promise} Resolves with { success: boolean }
+ */
+export function updateOrder(orderId, updateData) {
+  const orders = getOrders();
+  const index = orders.findIndex(o => o.id === orderId);
+  
+  if (index !== -1) {
+    orders[index] = { ...orders[index], ...updateData, updatedAt: new Date().toISOString() };
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+    return Promise.resolve({ success: true });
+  }
+  
+  return Promise.resolve({ success: false, error: 'Order not found' });
+}
+
+/**
+ * Delete an order from localStorage
+ * @param {string} orderId - Order ID to delete
+ * @returns {Promise} Resolves with { success: boolean }
+ */
+export function deleteOrder(orderId) {
+  const orders = getOrders();
+  const filtered = orders.filter(o => o.id !== orderId);
+  
+  if (filtered.length < orders.length) {
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(filtered));
+    return Promise.resolve({ success: true });
+  }
+  
+  return Promise.resolve({ success: false, error: 'Order not found' });
 }

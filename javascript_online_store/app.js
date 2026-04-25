@@ -1,6 +1,32 @@
 import { getProducts, saveOrder } from "./api.js";
 import { addToCart, cart, renderCart, removeFromCart, clearCart, getCartTotal, updateCartCount } from "./cart.js";
 
+// Get current user info for orders
+function getCurrentUserInfo() {
+  const currentUser = localStorage.getItem("storeUsername");
+  let customerInfo = {
+    customerName: 'Guest',
+    username: '',
+    customerEmail: '',
+    customerPhone: '',
+    address: ''
+  };
+  
+  if (currentUser) {
+    const users = JSON.parse(localStorage.getItem('storeUsers') || '{}');
+    if (users[currentUser]) {
+      const user = users[currentUser];
+      customerInfo.customerName = (user.firstName || '') + ' ' + (user.lastName || '').trim();
+      customerInfo.username = currentUser;
+      customerInfo.customerEmail = user.email || '';
+      customerInfo.customerPhone = user.phone || '';
+      customerInfo.address = user.address || '';
+    }
+  }
+  
+  return customerInfo;
+}
+
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
 window.clearCart = clearCart;
@@ -67,13 +93,33 @@ window.proceedCheckout = function () {
 window.confirmCheckout = function () {
   closeCheckoutConfirm();
   
+  // Get customer info
+  const customerInfo = getCurrentUserInfo();
+  
+  // Create order with customer info
   const order = {
-    items: cart,
-    total: getCartTotal()
+    customerName: customerInfo.customerName,
+    username: customerInfo.username,
+    customerEmail: customerInfo.customerEmail,
+    customerPhone: customerInfo.customerPhone,
+    items: cart.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity || 1,
+      image: item.image
+    })),
+    total: getCartTotal(),
+    paymentMethod: 'Cash',
+    shippingAddress: customerInfo.address,
+    orderStatus: 'Pending',
+    paymentStatus: 'Unpaid'
   };
 
-  saveOrder(order).then(() => {
-    alert("Order placed!");
+  saveOrder(order).then((result) => {
+    if (result.success) {
+      console.log('Order placed successfully:', result.order);
+    }
     cart.length = 0;
     renderCart();
     updateCartCount();

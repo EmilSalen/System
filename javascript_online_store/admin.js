@@ -1,6 +1,6 @@
 /**
  * Admin Dashboard JavaScript
- * Products Management System with localStorage
+ * Products & Orders Management System with localStorage
  * Cyberpunk Theme
  */
 
@@ -8,6 +8,7 @@
 // Core Configuration
 // ====================
 const STORAGE_KEY = 'pc_store_products';
+const ORDERS_STORAGE_KEY = 'cyber_store_orders';
 const CATEGORIES = ['Gaming', 'Office', 'WiFi'];
 
 // Default products (used when localStorage is empty)
@@ -265,6 +266,9 @@ function handleMenuClick(item) {
     if (pageName === 'products') {
         currentPage = 'products';
         renderProductsPage();
+    } else if (pageName === 'orders') {
+        currentPage = 'orders';
+        renderOrdersPage();
     } else if (pageName === 'dashboard') {
         currentPage = 'dashboard';
         renderDashboardPage();
@@ -273,6 +277,555 @@ function handleMenuClick(item) {
         renderPlaceholderPage(pageName);
     }
 }
+
+// ====================
+// Orders Management
+// ====================
+
+/**
+ * Get all orders from localStorage
+ */
+function getOrders() {
+    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
+    if (stored) {
+        try {
+            return JSON.parse(stored);
+        } catch (e) {
+            console.error('Error parsing stored orders:', e);
+            return [];
+        }
+    }
+    return [];
+}
+
+/**
+ * Save orders to localStorage
+ */
+function saveOrders(orders) {
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+}
+
+/**
+ * Render Orders Management Page
+ */
+function renderOrdersPage() {
+    elements.headerTitle.textContent = 'Orders Management';
+    
+    const orders = getOrders();
+    
+    elements.dashboardContent.innerHTML = `
+        <section class="orders-section">
+            <div class="section-header">
+                <h2>Customer Orders</h2>
+                <div class="orders-summary">
+                    <span class="orders-count">Total: ${orders.length} orders</span>
+                </div>
+            </div>
+
+            <div class="orders-table-container">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Name</th>
+                            <th>Username</th>
+                            <th>Products</th>
+                            <th>Total Price</th>
+                            <th>Payment Method</th>
+                            <th>Order Date</th>
+                            <th>Order Status</th>
+                            <th>Payment Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        ${renderOrderRows(orders)}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    `;
+}
+
+/**
+ * Render order table rows
+ */
+function renderOrderRows(orders) {
+    if (orders.length === 0) {
+        return `
+            <tr>
+                <td colspan="10" class="empty-state">
+                    <i class="fas fa-shopping-cart"></i>
+                    <p>No orders yet. Orders will appear here when customers make purchases.</p>
+                </td>
+            </tr>
+        `;
+    }
+
+    return orders.map(order => {
+        const productsList = order.products || [];
+        const productsText = productsList.map(p => `${p.name} (x${p.quantity || 1})`).join(', ');
+        
+        return `
+            <tr class="order-row">
+                <td><strong>${order.id}</strong></td>
+                <td>${order.customerName || 'Guest'}</td>
+                <td>${order.username || '-'}</td>
+                <td class="products-cell" title="${productsText}">${productsText.substring(0, 50)}${productsText.length > 50 ? '...' : ''}</td>
+                <td>₱${(order.totalPrice || 0).toLocaleString()}</td>
+                <td>${order.paymentMethod || 'Cash'}</td>
+                <td>${order.orderDate || '-'}</td>
+                <td>${getOrderStatusBadge(order.orderStatus || 'Pending')}</td>
+                <td>${getPaymentStatusBadge(order.paymentStatus || 'Unpaid')}</td>
+                <td>
+                    <div class="action-buttons-inline">
+                        <button class="btn-view" onclick="viewOrderDetails('${order.id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-edit" onclick="editOrderStatus('${order.id}')" title="Update Status">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-delete" onclick="confirmDeleteOrder('${order.id}')" title="Delete Order">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+/**
+ * Get order status badge HTML
+ */
+function getOrderStatusBadge(status) {
+    const statusClass = status.toLowerCase();
+    return `<span class="order-status ${statusClass}">${status}</span>`;
+}
+
+/**
+ * Get payment status badge HTML
+ */
+function getPaymentStatusBadge(status) {
+    const statusClass = status.toLowerCase();
+    return `<span class="payment-status ${statusClass}">${status}</span>`;
+}
+
+/**
+ * View order details
+ */
+window.viewOrderDetails = function(orderId) {
+    const orders = getOrders();
+    const order = orders.find(o => o.id === orderId);
+    
+    if (!order) {
+        showAlert('Order not found', 'error');
+        return;
+    }
+    
+    const productsList = order.products || [];
+    const productsHtml = productsList.map(p => `
+        <div class="order-product-item">
+            <img src="${p.image || 'images/placeholder.jpg'}" alt="${p.name}" class="order-product-image">
+            <div class="order-product-info">
+                <strong>${p.name}</strong>
+                <span>Quantity: ${p.quantity || 1} × ₱${(p.price || 0).toLocaleString()}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    const modal = document.createElement('div');
+    modal.id = 'orderDetailsModal';
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3>Order Details - ${order.id}</h3>
+                <button class="modal-close" onclick="closeOrderDetails()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="order-details-grid">
+                    <div class="order-info-section">
+                        <h4>Customer Information</h4>
+                        <p><strong>Name:</strong> ${order.customerName || 'Guest'}</p>
+                        <p><strong>Username:</strong> ${order.username || '-'}</p>
+                        <p><strong>Email:</strong> ${order.customerEmail || '-'}</p>
+                        <p><strong>Phone:</strong> ${order.customerPhone || '-'}</p>
+                    </div>
+                    
+                    <div class="order-info-section">
+                        <h4>Order Information</h4>
+                        <p><strong>Order ID:</strong> ${order.id}</p>
+                        <p><strong>Date:</strong> ${order.orderDate || '-'}</p>
+                        <p><strong>Time:</strong> ${order.orderTime || '-'}</p>
+                        <p><strong>Payment Method:</strong> ${order.paymentMethod || 'Cash'}</p>
+                        <p><strong>Shipping Address:</strong> ${order.shippingAddress || '-'}</p>
+                    </div>
+                    
+                    <div class="order-info-section">
+                        <h4>Status</h4>
+                        <p><strong>Order Status:</strong> ${getOrderStatusBadge(order.orderStatus || 'Pending')}</p>
+                        <p><strong>Payment Status:</strong> ${getPaymentStatusBadge(order.paymentStatus || 'Unpaid')}</p>
+                        <p><strong>Total Amount:</strong> ₱${(order.totalPrice || 0).toLocaleString()}</p>
+                    </div>
+                </div>
+                
+                <div class="order-products-section">
+                    <h4>Products Ordered</h4>
+                    <div class="order-products-list">
+                        ${productsHtml}
+                    </div>
+                </div>
+                
+                ${order.notes ? `<div class="order-notes-section"><h4>Notes</h4><p>${order.notes}</p></div>` : ''}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeOrderDetails();
+        }
+    });
+}
+
+window.closeOrderDetails = function() {
+    const modal = document.getElementById('orderDetailsModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+/**
+ * Edit order status
+ */
+window.editOrderStatus = function(orderId) {
+    const orders = getOrders();
+    const order = orders.find(o => o.id === orderId);
+    
+    if (!order) {
+        showAlert('Order not found', 'error');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'editOrderStatusModal';
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Update Order Status</h3>
+                <button class="modal-close" onclick="closeEditOrderStatus()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="order-status-info">
+                    <p><strong>Order ID:</strong> ${order.id}</p>
+                    <p><strong>Customer:</strong> ${order.customerName || 'Guest'}</p>
+                    <p><strong>Current Status:</strong> ${getOrderStatusBadge(order.orderStatus || 'Pending')}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Order Status</label>
+                    <select id="newOrderStatus">
+                        <option value="Pending" ${order.orderStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Processing" ${order.orderStatus === 'Processing' ? 'selected' : ''}>Processing</option>
+                        <option value="Shipped" ${order.orderStatus === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                        <option value="Delivered" ${order.orderStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                        <option value="Cancelled" ${order.orderStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Payment Status</label>
+                    <select id="newPaymentStatus">
+                        <option value="Unpaid" ${order.paymentStatus === 'Unpaid' ? 'selected' : ''}>Unpaid</option>
+                        <option value="Paid" ${order.paymentStatus === 'Paid' ? 'selected' : ''}>Paid</option>
+                        <option value="Refunded" ${order.paymentStatus === 'Refunded' ? 'selected' : ''}>Refunded</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeEditOrderStatus()">Cancel</button>
+                <button type="button" class="btn-save" onclick="saveOrderStatus('${orderId}')">Update Status</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeEditOrderStatus();
+        }
+    });
+}
+
+window.closeEditOrderStatus = function() {
+    const modal = document.getElementById('editOrderStatusModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+window.saveOrderStatus = function(orderId) {
+    const newOrderStatus = document.getElementById('newOrderStatus').value;
+    const newPaymentStatus = document.getElementById('newPaymentStatus').value;
+    
+    const orders = getOrders();
+    const index = orders.findIndex(o => o.id === orderId);
+    
+    if (index !== -1) {
+        orders[index].orderStatus = newOrderStatus;
+        orders[index].paymentStatus = newPaymentStatus;
+        orders[index].updatedAt = new Date().toISOString();
+        saveOrders(orders);
+        
+        showAlert('Order status updated successfully!', 'success');
+        closeEditOrderStatus();
+        renderOrdersPage();
+    }
+}
+
+/**
+ * Confirm delete order
+ */
+window.confirmDeleteOrder = function(orderId) {
+    const orders = getOrders();
+    const order = orders.find(o => o.id === orderId);
+    
+    if (!order) {
+        showAlert('Order not found', 'error');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'deleteOrderModal';
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h3>Confirm Delete</h3>
+                <button class="modal-close" onclick="closeDeleteOrderModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <p>Are you sure you want to delete order <strong>${order.id}</strong>?</p>
+                <p class="warning-text">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeDeleteOrderModal()">Cancel</button>
+                <button type="button" class="btn-delete" onclick="deleteOrder('${orderId}')">Delete Order</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeDeleteOrderModal();
+        }
+    });
+}
+
+window.closeDeleteOrderModal = function() {
+    const modal = document.getElementById('deleteOrderModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+window.deleteOrder = function(orderId) {
+    let orders = getOrders();
+    orders = orders.filter(o => o.id !== orderId);
+    saveOrders(orders);
+    
+    showAlert('Order deleted successfully!', 'success');
+    closeDeleteOrderModal();
+    renderOrdersPage();
+}
+
+// ====================
+// Dashboard Page
+// ====================
+
+/**
+ * Render Dashboard Page
+ */
+function renderDashboardPage() {
+    elements.headerTitle.textContent = 'Dashboard';
+    
+    const orders = getOrders();
+    const recentOrders = orders.slice(-5).reverse(); // Last 5 orders
+    
+    elements.dashboardContent.innerHTML = `
+        <section class="welcome-section">
+            <h2>Welcome back, Admin!</h2>
+            <p>Here's what's happening with your store today.</p>
+        </section>
+
+        <section class="summary-cards">
+            <div class="summary-card">
+                <div class="card-icon blue">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="card-info">
+                    <h3>${orders.length}</h3>
+                    <p>Total Orders</p>
+                    <span class="trend positive">+12% <i class="fas fa-arrow-up"></i></span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="card-icon purple">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="card-info">
+                    <h3>₱${orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0).toLocaleString()}</h3>
+                    <p>Total Revenue</p>
+                    <span class="trend positive">+8% <i class="fas fa-arrow-up"></i></span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="card-icon green">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="card-info">
+                    <h3>${products.length}</h3>
+                    <p>Total Products</p>
+                    <span class="trend neutral">0% <i class="fas fa-minus"></i></span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="card-icon orange">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="card-info">
+                    <h3>${orders.filter(o => o.orderStatus === 'Pending').length}</h3>
+                    <p>Pending Orders</p>
+                    <span class="trend neutral">0% <i class="fas fa-minus"></i></span>
+                </div>
+            </div>
+        </section>
+
+        <div class="dashboard-grid">
+            <section class="recent-orders">
+                <div class="section-header">
+                    <h3>Recent Orders</h3>
+                    <a href="#" class="view-all" onclick="navigateToOrders()">View All <i class="fas fa-arrow-right"></i></a>
+                </div>
+                
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${renderRecentOrderRows(recentOrders)}
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="quick-actions">
+                <div class="section-header">
+                    <h3>Quick Actions</h3>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn primary" onclick="navigateToProducts()">
+                        <i class="fas fa-plus"></i>
+                        <span>Add New Product</span>
+                    </button>
+                    <button class="action-btn secondary" onclick="navigateToOrders()">
+                        <i class="fas fa-list"></i>
+                        <span>View All Orders</span>
+                    </button>
+                    <button class="action-btn tertiary">
+                        <i class="fas fa-user-cog"></i>
+                        <span>Manage Users</span>
+                    </button>
+                    <button class="action-btn info">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>View Reports</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+    `;
+}
+
+/**
+ * Render recent order rows for dashboard
+ */
+function renderRecentOrderRows(orders) {
+    if (orders.length === 0) {
+        return `
+            <tr>
+                <td colspan="5" class="empty-state">
+                    <i class="fas fa-shopping-cart"></i>
+                    <p>No orders yet. Orders will appear here when customers make purchases.</p>
+                </td>
+            </tr>
+        `;
+    }
+    
+    return orders.map(order => `
+        <tr>
+            <td>${order.id}</td>
+            <td>${order.customerName || 'Guest'}</td>
+            <td>${order.orderDate || '-'}</td>
+            <td>₱${(order.totalPrice || 0).toLocaleString()}</td>
+            <td>${getOrderStatusBadge(order.orderStatus || 'Pending')}</td>
+        </tr>
+    `).join('');
+}
+
+/**
+ * Navigate to products page from dashboard
+ */
+function navigateToProducts() {
+    const productsMenuItem = Array.from(elements.menuItems).find(item => 
+        item.querySelector('span').textContent.toLowerCase() === 'products'
+    );
+    
+    if (productsMenuItem) {
+        handleMenuClick(productsMenuItem);
+    }
+}
+
+/**
+ * Navigate to orders page from dashboard
+ */
+window.navigateToOrders = function() {
+    const ordersMenuItem = Array.from(elements.menuItems).find(item => 
+        item.querySelector('span').textContent.toLowerCase() === 'orders'
+    );
+    
+    if (ordersMenuItem) {
+        handleMenuClick(ordersMenuItem);
+    }
+}
+
+// ====================
+// Products Management
+// ====================
 
 /**
  * Render Products Management Page
@@ -382,135 +935,6 @@ function getStatusBadge(status) {
 }
 
 /**
- * Render Dashboard Page
- */
-function renderDashboardPage() {
-    elements.headerTitle.textContent = 'Dashboard';
-    
-    elements.dashboardContent.innerHTML = `
-        <section class="welcome-section">
-            <h2>Welcome back, Admin!</h2>
-            <p>Here's what's happening with your store today.</p>
-        </section>
-
-        <section class="summary-cards">
-            <div class="summary-card">
-                <div class="card-icon blue">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <div class="card-info">
-                    <h3>1,247</h3>
-                    <p>Total Orders</p>
-                    <span class="trend positive">+12% <i class="fas fa-arrow-up"></i></span>
-                </div>
-            </div>
-
-            <div class="summary-card">
-                <div class="card-icon purple">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-                <div class="card-info">
-                    <h3>$89,450</h3>
-                    <p>Total Revenue</p>
-                    <span class="trend positive">+8% <i class="fas fa-arrow-up"></i></span>
-                </div>
-            </div>
-
-            <div class="summary-card">
-                <div class="card-icon green">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="card-info">
-                    <h3>3,420</h3>
-                    <p>Total Customers</p>
-                    <span class="trend positive">+15% <i class="fas fa-arrow-up"></i></span>
-                </div>
-            </div>
-
-            <div class="summary-card">
-                <div class="card-icon orange">
-                    <i class="fas fa-box"></i>
-                </div>
-                <div class="card-info">
-                    <h3>${products.length}</h3>
-                    <p>Total Products</p>
-                    <span class="trend neutral">0% <i class="fas fa-minus"></i></span>
-                </div>
-            </div>
-        </section>
-
-        <div class="dashboard-grid">
-            <section class="recent-orders">
-                <div class="section-header">
-                    <h3>Recent Orders</h3>
-                    <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
-                </div>
-                
-                <table class="orders-table">
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>#ORD-7821</td>
-                            <td>John Smith</td>
-                            <td>Apr 15, 2026</td>
-                            <td>$1,299.99</td>
-                            <td><span class="status delivered">Delivered</span></td>
-                        </tr>
-                        <tr>
-                            <td>#ORD-7820</td>
-                            <td>Sarah Johnson</td>
-                            <td>Apr 14, 2026</td>
-                            <td>$849.50</td>
-                            <td><span class="status pending">Pending</span></td>
-                        </tr>
-                        <tr>
-                            <td>#ORD-7819</td>
-                            <td>Mike Davis</td>
-                            <td>Apr 14, 2026</td>
-                            <td>$2,150.00</td>
-                            <td><span class="status shipped">Shipped</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </section>
-
-            <section class="quick-actions">
-                <div class="section-header">
-                    <h3>Quick Actions</h3>
-                </div>
-                
-                <div class="action-buttons">
-                    <button class="action-btn primary" onclick="navigateToProducts()">
-                        <i class="fas fa-plus"></i>
-                        <span>Add New Product</span>
-                    </button>
-                    <button class="action-btn secondary">
-                        <i class="fas fa-list"></i>
-                        <span>View All Orders</span>
-                    </button>
-                    <button class="action-btn tertiary">
-                        <i class="fas fa-user-cog"></i>
-                        <span>Manage Users</span>
-                    </button>
-                    <button class="action-btn info">
-                        <i class="fas fa-chart-pie"></i>
-                        <span>View Reports</span>
-                    </button>
-                </div>
-            </section>
-        </div>
-    `;
-}
-
-/**
  * Render placeholder page for other sections
  */
 function renderPlaceholderPage(pageName) {
@@ -525,19 +949,6 @@ function renderPlaceholderPage(pageName) {
     `;
 }
 
-/**
- * Navigate to products page from dashboard
- */
-function navigateToProducts() {
-    const productsMenuItem = Array.from(elements.menuItems).find(item => 
-        item.querySelector('span').textContent.toLowerCase() === 'products'
-    );
-    
-    if (productsMenuItem) {
-        handleMenuClick(productsMenuItem);
-    }
-}
-
 // ====================
 // Product CRUD Operations
 // ====================
@@ -545,7 +956,7 @@ function navigateToProducts() {
 /**
  * Open product modal for add/edit
  */
-function openProductModal(productId = null) {
+window.openProductModal = function(productId = null) {
     editingProductId = productId;
     const modal = document.getElementById('productModal');
     const form = document.getElementById('productForm');
@@ -598,7 +1009,7 @@ function openProductModal(productId = null) {
 /**
  * Close product modal
  */
-function closeProductModal() {
+window.closeProductModal = function() {
     document.getElementById('productModal').classList.remove('active');
     editingProductId = null;
 }
@@ -606,7 +1017,7 @@ function closeProductModal() {
 /**
  * Add specification field
  */
-function addSpecField(value = '') {
+window.addSpecField = function(value = '') {
     const container = document.getElementById('specsContainer');
     const specDiv = document.createElement('div');
     specDiv.className = 'spec-field';
@@ -632,7 +1043,7 @@ function getSpecs() {
 /**
  * Handle image file upload and convert to Base64
  */
-function handleImageUpload(event) {
+window.handleImageUpload = function(event) {
     const file = event.target.files[0];
     if (!file) return;
     
@@ -673,7 +1084,7 @@ function resetImageUpload() {
 /**
  * Save product
  */
-function saveProduct() {
+window.saveProduct = function() {
     const form = document.getElementById('productForm');
     const formData = new FormData(form);
 
@@ -717,14 +1128,14 @@ function saveProduct() {
 /**
  * Edit product
  */
-function editProduct(productId) {
+window.editProduct = function(productId) {
     openProductModal(productId);
 }
 
 /**
  * Confirm delete product
  */
-function confirmDelete(productId) {
+window.confirmDelete = function(productId) {
     const modal = document.getElementById('deleteModal');
     const product = products.find(p => p.id === productId);
     
@@ -749,7 +1160,7 @@ function deleteProduct(productId) {
 /**
  * Close delete modal
  */
-function closeDeleteModal() {
+window.closeDeleteModal = function() {
     document.getElementById('deleteModal').classList.remove('active');
 }
 
@@ -760,7 +1171,7 @@ function closeDeleteModal() {
 /**
  * Filter products
  */
-function filterProducts() {
+window.filterProducts = function() {
     const searchTerm = document.getElementById('productSearch').value.toLowerCase();
     const categoryFilter = document.getElementById('categoryFilter').value;
 
@@ -776,7 +1187,7 @@ function filterProducts() {
 /**
  * Sort table
  */
-function sortTable(column) {
+window.sortTable = function(column) {
     sortDirection[column] = sortDirection[column] === 'asc' ? 'desc' : 'asc';
     const dir = sortDirection[column];
     

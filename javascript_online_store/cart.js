@@ -1,3 +1,5 @@
+import { saveOrder } from "./api.js";
+
 const STORAGE_KEY = "pc_store_cart";
 
 export let cart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -414,6 +416,65 @@ window.closeCheckoutSuccess = function() {
     
     // Wait for UI to update before clearing cart
     setTimeout(() => {
+      // Get current user info
+      const currentUser = localStorage.getItem("storeUsername");
+      let customerInfo = {
+        customerName: 'Guest',
+        username: '',
+        customerEmail: '',
+        customerPhone: '',
+        address: ''
+      };
+      
+      // Get real customer info from storeUsers
+      if (currentUser) {
+        const users = JSON.parse(localStorage.getItem('storeUsers') || '{}');
+        if (users[currentUser]) {
+          const user = users[currentUser];
+          customerInfo.customerName = (user.firstName || '') + ' ' + (user.lastName || '').trim();
+          customerInfo.username = currentUser;
+          customerInfo.customerEmail = user.email || '';
+          customerInfo.customerPhone = user.phone || '';
+          customerInfo.address = user.address || '';
+        }
+      }
+      
+      // Get delivery address and contact from form
+      const deliveryAddress = document.getElementById("deliveryAddress")?.value.trim() || customerInfo.address;
+      const contactNumber = document.getElementById("contactNumber")?.value.trim() || customerInfo.customerPhone;
+      
+      // Get payment method
+      const paymentMethod = document.getElementById("paymentMethod")?.value || 'Cash';
+      
+      // Create order object
+      const orderData = {
+        customerName: customerInfo.customerName,
+        username: customerInfo.username,
+        customerEmail: customerInfo.customerEmail,
+        customerPhone: contactNumber,
+        items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity || 1,
+          image: item.image
+        })),
+        total: getCartTotal(),
+        paymentMethod: paymentMethod,
+        shippingAddress: deliveryAddress,
+        orderStatus: 'Pending',
+        paymentStatus: 'Unpaid'
+      };
+      
+      // Save order to localStorage
+      saveOrder(orderData).then(result => {
+        if (result.success) {
+          console.log('Order placed successfully:', result.order);
+        } else {
+          console.error('Failed to save order');
+        }
+      });
+      
       // Clear cart
       cart = [];
       saveCart();
