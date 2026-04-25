@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Online PC Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- FULL STICKY HEADER WRAPPER -->
+<div class="sticky-header-wrapper">
+  <!-- STICKY HEADER -->
+  <div class="sticky-header">
+    <!-- Left Side: Logo / Store Title -->
+     <div class="header-left">
+       <h1>MRE-TechSolutions</h1>
+     </div>
+
+    <!-- Center: Search Bar -->
+    <div class="header-center">
+      <div class="search-filters">
+        <input type="text" id="searchInput" placeholder="Search products..." onkeyup="filterProducts()">
+      </div>
+    </div>
+
+    <!-- Right Side: Cart & Login -->
+    <div class="header-right">
+<button class="cart-button compact-action-btn" onclick="window.location.href='cart.html'">🛒 View Cart <span id="cartCount" class="cart-count">0</span></button>
+      
+      <div id="auth-section">
+        <button class="login-button" onclick="openLoginModal()">👤 Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION MENU -->
+  <div class="nav-menu">
+    <a href="#" class="nav-link">Home</a>
+    <a href="#" class="nav-link active">Products</a>
+    <a href="#" class="nav-link">PC's</a>
+    <a href="#" class="nav-link">Piso WiFi</a>
+    <a href="#" class="nav-link">Contact</a>
+  </div>
+</div>
+
+<!-- SLIDESHOW -->
+<div class="hero-slideshow">
+  <div class="slideshow-card">
+    <div class="slide-item active">
+      <img src="images/pc_rig_build.jpg" alt="Gaming PC Build" class="slide-image">
+      <div class="slide-overlay">
+        <div class="slide-title">Gaming PC Builds</div>
+        <div class="slide-description">High-performance custom builds for gamers</div>
+        <div class="slide-tagline">Starting at ₱45,000</div>
+      </div>
+    </div>
+    <div class="slide-item">
+      <img src="images/cyberpunk_bike.jpg" alt="Cyberpunk Motorcycle" class="slide-image">
+      <div class="slide-overlay">
+        <div class="slide-title">Cyberpunk Accessories</div>
+        <div class="slide-description">Futuristic gear and accessories</div>
+        <div class="slide-tagline">Limited Edition</div>
+      </div>
+    </div>
+    <div class="slide-item">
+      <img src="images/cyberpunk_yamaorce.jpg" alt="Cyberpunk Motorcycle" class="slide-image">
+      <div class="slide-overlay">
+        <div class="slide-title">Motorcycle Tech</div>
+        <div class="slide-description">Advanced motorcycle electronics</div>
+        <div class="slide-tagline">Performance Upgrades</div>
+      </div>
+    </div>
+  </div>
+  <button class="slide-prev" onclick="changeSlide(-1)">&#10094;</button>
+  <button class="slide-next" onclick="changeSlide(1)">&#10095;</button>
+  <div class="slide-dots">
+    <span class="slide-dot" onclick="currentSlide(1)"></span>
+    <span class="slide-dot" onclick="currentSlide(2)"></span>
+    <span class="slide-dot" onclick="currentSlide(3)"></span>
+  </div>
+</div>
+
+<div id="products"></div>
+
+
+
+  <!-- CHECKOUT CONFIRMATION MODAL -->
+  <div id="checkoutConfirmOverlay" class="checkout-confirm-overlay"></div>
+  <div id="checkoutConfirmModal" class="checkout-confirm-modal">
+    <div class="checkout-confirm-content">
+      <h3>Are you sure you want to checkout?</h3>
+      <div class="checkout-confirm-buttons">
+        <button class="checkout-btn-cancel" onclick="closeCheckoutConfirm()">Cancel</button>
+        <button class="checkout-btn-confirm" onclick="confirmCheckout()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+   <!-- EMPTY CART MODAL -->
+   <div id="emptyCartOverlay" class="empty-cart-overlay" onclick="closeEmptyCartModal()"></div>
+   <div id="emptyCartModal" class="empty-cart-modal">
+     <div class="empty-cart-content">
+       <div class="empty-cart-icon">🛒</div>
+       <h3>Your cart is empty</h3>
+       <p>Add some products before proceeding to checkout</p>
+       <button class="empty-cart-close-btn" onclick="closeEmptyCartModal()">Got it</button>
+     </div>
+   </div>
+
+   <!-- PRODUCT DETAILS MODAL -->
+   <div id="productOverlay" class="product-overlay" onclick="closeProductModal()"></div>
+   <div id="productModal" class="product-modal">
+     <button class="product-close-btn" onclick="closeProductModal()">×</button>
+      <div id="productModalContent">
+        <div class="product-modal-image zoom-container" id="zoomContainer">
+          <img id="modalProductImage" alt="Product Image" class="zoom-image">
+        </div>
+       <div class="product-modal-info">
+         <h2 id="modalProductName"></h2>
+         <p class="product-modal-price" id="modalProductPrice"></p>
+         <p class="product-modal-description" id="modalProductDescription">Product description will appear here</p>
+
+         <div class="product-quantity-selector">
+           <label>Quantity:</label>
+           <button onclick="decreaseQuantity()">−</button>
+           <span id="productQuantity">1</span>
+           <button onclick="increaseQuantity()">+</button>
+         </div>
+
+         <div class="product-modal-buttons">
+           <button class="product-add-cart-btn" onclick="modalAddToCart()">Add to Cart</button>
+           <button class="product-buy-now-btn" onclick="modalBuyNow()">Buy Now</button>
+         </div>
+       </div>
+     </div>
+   </div>
+
+   <!-- FULL SCREEN IMAGE PREVIEW -->
+   <div id="fullscreenPreview" class="fullscreen-preview">
+     <button class="fullscreen-close-btn" onclick="closeFullscreenPreview()">×</button>
+     <img id="fullscreenImage" alt="Full size product image">
+   </div>
+
+    <!-- ADD TO CART CONFIRMATION MODAL -->
+    <div id="addCartConfirmOverlay" class="add-cart-confirm-overlay"></div>
+    <div id="addCartConfirmModal" class="add-cart-confirm-modal">
+      <button class="add-cart-close-btn" onclick="closeAddCartConfirm()">×</button>
+      <div class="add-cart-confirm-content">
+        <div class="add-cart-product-image">
+          <img id="confirmProductImage" alt="Product Image">
+        </div>
+        <h3 id="confirmProductName"></h3>
+        <p class="add-cart-product-price" id="confirmProductPrice"></p>
+        <div class="add-cart-success-message">
+          <div class="success-icon">✓</div>
+          <p>Added to cart successfully!</p>
+        </div>
+        <p class="add-cart-total-items" id="confirmCartTotalItems"></p>
+        <p class="add-cart-grand-total" id="confirmCartGrandTotal"></p>
+        <div class="add-cart-confirm-buttons">
+          <button class="continue-shopping-btn" onclick="closeAddCartConfirm()">Continue Shopping</button>
+           <button class="proceed-checkout-btn" onclick="localStorage.setItem('pc_store_cart', JSON.stringify(cart)); window.location.href='cart.html'; return false;">Proceed to Checkout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOM BUILD PREVIEW MODAL -->
+    <div id="customBuildPreviewOverlay" class="custom-build-preview-overlay" onclick="closeCustomBuildPreview()"></div>
+    <div id="customBuildPreviewModal" class="custom-build-preview-modal">
+      <button class="custom-build-close-btn" onclick="closeCustomBuildPreview()">×</button>
+      <div class="custom-build-preview-content">
+        <div class="preview-image-container">
+          <img src="CustomBuildPCimages/The Caspian PC🌊.jpg" alt="Custom Build PC" class="preview-image">
+        </div>
+        <h2>Custom PC Build</h2>
+        <p class="modal-subtitle">Build a PC based on your budget and needs</p>
+        
+        <!-- Benefits Section -->
+        <div class="benefits-section">
+          <div class="benefit-item">
+            <span class="benefit-check">✔</span>
+            <span>Built for your budget</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-check">✔</span>
+            <span>Choose preferred parts</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-check">✔</span>
+            <span>Great for gaming, work, or streaming</span>
+          </div>
+        </div>
+        
+        <button class="start-build-btn" onclick="openCustomBuildForm()">Start Build</button>
+      </div>
+    </div>
+
+    <!-- CUSTOM BUILD FORM MODAL -->
+    <div id="customBuildOverlay" class="custom-build-overlay" onclick="closeCustomBuildModal()"></div>
+    <div id="customBuildModal" class="custom-build-modal">
+      <button class="custom-build-close-btn" onclick="closeCustomBuildModal()">×</button>
+      <div class="custom-build-content">
+        <h2>Custom PC Build Request</h2>
+        <form id="customBuildForm">
+          <div class="form-group">
+            <label for="buildBudget">Budget (₱)</label>
+            <input type="number" id="buildBudget" placeholder="Enter your budget" required>
+          </div>
+          <div class="form-group">
+            <label for="buildPurpose">Purpose</label>
+            <select id="buildPurpose" required>
+              <option value="">Select purpose</option>
+              <option value="Gaming">Gaming</option>
+              <option value="Office">Office</option>
+              <option value="Editing">Editing</option>
+              <option value="School">School</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="preferredCpu">Preferred CPU</label>
+            <input type="text" id="preferredCpu" placeholder="e.g. Ryzen 7, Intel i7">
+          </div>
+          <div class="form-group">
+            <label for="preferredGpu">Preferred GPU</label>
+            <input type="text" id="preferredGpu" placeholder="e.g. RTX 4070, RX 7900 XT">
+          </div>
+          <div class="form-group">
+            <label for="buildNotes">Additional Notes</label>
+            <textarea id="buildNotes" placeholder="Any specific requirements or preferences..." rows="3"></textarea>
+          </div>
+          <div class="form-buttons">
+            <button type="button" class="form-btn-cancel" onclick="closeCustomBuildModal()">Close</button>
+            <button type="submit" class="form-btn-submit">Submit Request</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- CUSTOM BUILD SUCCESS MODAL -->
+    <div id="customBuildSuccessOverlay" class="custom-build-success-overlay"></div>
+    <div id="customBuildSuccessModal" class="custom-build-success-modal">
+      <div class="custom-build-success-content">
+        <div class="success-icon">✓</div>
+        <h3>Your custom build request has been sent.</h3>
+        <p>We will contact you soon!</p>
+        <button class="custom-build-success-btn" onclick="closeCustomBuildSuccessModal()">Got It</button>
+      </div>
+    </div>
+
+     <!-- LOGIN MODAL -->
+     <div id="loginOverlay" class="login-overlay" onclick="closeLoginModal()"></div>
+     <div id="loginModal" class="login-modal">
+       <div class="login-split-layout">
+          <div class="login-image-panel">
+            <img id="loginFormImage" src="LoginAndRegistrationFormImages/LoginFormimage.jpg" alt="Login Image">
+          </div>
+         <div class="login-content-panel">
+           <div class="login-modal-header">
+             <h2 id="loginModalTitle">🔑 Login</h2>
+             <button onclick="closeLoginModal()">×</button>
+           </div>
+           
+           <div id="login-form" class="login-form">
+             <div class="form-group">
+               <label for="loginUsername">Username</label>
+               <input type="text" id="loginUsername" placeholder="Enter your username" autocomplete="username">
+             </div>
+             
+             <div class="form-group">
+               <label for="loginPassword">Password</label>
+               <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+             </div>
+             
+             <button onclick="performLogin()" class="login-submit-btn">Login</button>
+             
+             <div class="auth-toggle">
+               <p>Don't have an account? <a href="#" onclick="event.preventDefault(); switchToRegister();">Register here</a></p>
+             </div>
+           </div>
+           
+            <div id="register-form" class="login-form" style="display: none;">
+               <div class="form-group">
+                 <label for="regFirstname">First Name</label>
+                 <input type="text" id="regFirstname" placeholder="Enter first name" autocomplete="given-name">
+               </div>
+               
+               <div class="form-group">
+                 <label for="regLastname">Last Name</label>
+                 <input type="text" id="regLastname" placeholder="Enter last name" autocomplete="family-name">
+               </div>
+               
+               <div class="form-group">
+                 <label for="regUsername">Username</label>
+                 <input type="text" id="regUsername" placeholder="Create a username" autocomplete="username">
+                 <div id="usernameError" class="form-error-message"></div>
+               </div>
+               
+               <div class="form-group">
+                 <label for="regEmail">Email</label>
+                 <input type="email" id="regEmail" placeholder="Enter email address" autocomplete="email">
+               </div>
+               
+               <div class="form-group">
+                 <label for="regPhone">Phone Number</label>
+                 <input type="tel" id="regPhone" placeholder="Enter phone number" autocomplete="tel">
+               </div>
+               
+               <div class="form-group password-field-container">
+                 <label for="regPassword">Password</label>
+                 <input type="password" id="regPassword" placeholder="Create a password" autocomplete="new-password">
+                 <span class="password-toggle-eye" onclick="togglePasswordVisibility('regPassword', this)">👁️</span>
+               </div>
+               
+               <div class="form-group password-field-container">
+                 <label for="regConfirmPassword">Confirm Password</label>
+                 <input type="password" id="regConfirmPassword" placeholder="Confirm password" autocomplete="new-password">
+                 <span class="password-toggle-eye" onclick="togglePasswordVisibility('regConfirmPassword', this)">👁️</span>
+               </div>
+              
+              <div class="form-group">
+                <label for="regAddress">Address</label>
+                <textarea id="regAddress" placeholder="Enter your full address" rows="2" autocomplete="street-address"></textarea>
+              </div>
+              
+              <button onclick="performRegister()" class="login-submit-btn">Register Account</button>
+              
+              <div class="auth-toggle">
+                <p>Already have an account? <a href="#" onclick="event.preventDefault(); switchToLogin();">Login here</a></p>
+              </div>
+            </div>
+         </div>
+       </div>
+     </div>
+
+   <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fas fa-store"></i>
+                <h2>CYBER STORE</h2>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="#" class="menu-item active">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Orders</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-box"></i>
+                    <span>Products</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-users"></i>
+                    <span>Customers</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Revenue</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>Messages</span>
+                    <span class="badge">5</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <div class="menu-divider"></div>
+                <a href="#" class="menu-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-title">
+                    <h1>Dashboard</h1>
+                </div>
+                
+                <div class="header-right">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search...">
+                    </div>
+                    
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-dot"></span>
+                    </div>
+                    
+                    <div class="admin-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Admin User</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <main class="dashboard-content">
+                <!-- Welcome Section -->
+                <section class="welcome-section">
+                    <h2>Welcome back, Admin!</h2>
+                    <p>Here's what's happening with your store today.</p>
+                </section>
+
+                <!-- Summary Cards -->
+                <section class="summary-cards">
+                    <div class="summary-card">
+                        <div class="card-icon blue">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>1,247</h3>
+                            <p>Total Orders</p>
+                            <span class="trend positive">+12% <i class="fas fa-arrow-up"></i></span>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="card-icon purple">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>$89,450</h3>
+                            <p>Total Revenue</p>
+                            <span class="trend positive">+8% <i class="fas fa-arrow-up"></i></span>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="card-icon green">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>3,420</h3>
+                            <p>Total Customers</p>
+                            <span class="trend positive">+15% <i class="fas fa-arrow-up"></i></span>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="card-icon orange">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>156</h3>
+                            <p>Total Products</p>
+                            <span class="trend neutral">0% <i class="fas fa-minus"></i></span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Recent Orders and Quick Actions -->
+                <div class="dashboard-grid">
+                    <!-- Recent Orders -->
+                    <section class="recent-orders">
+                        <div class="section-header">
+                            <h3>Recent Orders</h3>
+                            <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                        
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#ORD-7821</td>
+                                    <td>John Smith</td>
+                                    <td>Apr 15, 2026</td>
+                                    <td>$1,299.99</td>
+                                    <td><span class="status delivered">Delivered</span></td>
+                                </tr>
+                                <tr>
+                                    <td>#ORD-7820</td>
+                                    <td>Sarah Johnson</td>
+                                    <td>Apr 14, 2026</td>
+                                    <td>$849.50</td>
+                                    <td><span class="status pending">Pending</span></td>
+                                </tr>
+                                <tr>
+                                    <td>#ORD-7819</td>
+                                    <td>Mike Davis</td>
+                                    <td>Apr 14, 2026</td>
+                                    <td>$2,150.00</td>
+                                    <td><span class="status shipped">Shipped</span></td>
+                                </tr>
+                                <tr>
+                                    <td>#ORD-7818</td>
+                                    <td>Emily Chen</td>
+                                    <td>Apr 13, 2026</td>
+                                    <td>$599.99</td>
+                                    <td><span class="status delivered">Delivered</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <!-- Quick Actions -->
+                    <section class="quick-actions">
+                        <div class="section-header">
+                            <h3>Quick Actions</h3>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="action-btn primary">
+                                <i class="fas fa-plus"></i>
+                                <span>Add New Product</span>
+                            </button>
+                            <button class="action-btn secondary">
+                                <i class="fas fa-list"></i>
+                                <span>View All Orders</span>
+                            </button>
+                            <button class="action-btn tertiary">
+                                <i class="fas fa-user-cog"></i>
+                                <span>Manage Users</span>
+                            </button>
+                            <button class="action-btn info">
+                                <i class="fas fa-chart-pie"></i>
+                                <span>View Reports</span>
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+    // Admin Authentication Check
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentUser = localStorage.getItem("storeUsername");
+        const userRole = localStorage.getItem("userRole");
+        
+        if (!currentUser || userRole !== "admin") {
+            // Not logged in as admin - redirect to store login
+            window.location.href = 'index.html';
+        }
+    });
+    
+    // Admin Logout Function
+    function performAdminLogout() {
+        localStorage.removeItem("storeUsername");
+        localStorage.removeItem("userRole");
+        window.location.href = 'index.html';
+    }
+    </script>
+    <script src="admin.js"></script>
+</body>
+</html>
+
+
