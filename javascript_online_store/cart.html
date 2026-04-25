@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - MRE-TechSolutions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- FULL STICKY HEADER WRAPPER -->
+<div class="sticky-header-wrapper">
+    <!-- STICKY HEADER -->
+    <div class="sticky-header">
+        <div class="header-left">
+            <h1>MRE-TechSolutions</h1>
+        </div>
+
+        <div class="header-center">
+            <div class="search-filters">
+                <input type="text" placeholder="Search products..." disabled>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button class="cart-button compact-action-btn" onclick="window.location.href='index.html'">Back to Store</button>
+            <div id="auth-section"></div>
+        </div>
+    </div>
+
+    <!-- NAVIGATION MENU -->
+    <div class="nav-menu">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="index.html" class="nav-link">Products</a>
+        <a href="index.html" class="nav-link">PC's</a>
+        <a href="index.html" class="nav-link">Piso WiFi</a>
+        <a href="#" class="nav-link active">Cart</a>
+    </div>
+</div>
+
+<!-- CART PAGE CONTENT -->
+<div class="cart-page-container">
+    <h2 class="cart-page-title">🛒 Shopping Cart</h2>
+    
+    <div class="cart-page-content">
+        <!-- CART ITEMS SECTION -->
+        <div class="cart-page-items">
+            <div class="cart-section-header">
+                <h3>Cart Items</h3>
+                <span id="cartItemsCount">0 items</span>
+            </div>
+            <div id="cartItemsContainer" class="cart-items-list"></div>
+            
+            <!-- RECOMMENDATION SECTION -->
+            <section class="recommend-section">
+                <h2>Recommended For You</h2>
+                <div id="recommendGrid" class="recommend-grid"></div>
+            </section>
+        </div>
+
+        <!-- ORDER SUMMARY SIDEBAR -->
+        <div class="cart-summary-sidebar">
+            <div class="summary-card">
+                <h3>Order Summary</h3>
+                
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>₱<span id="cartSubtotal">0</span></span>
+                </div>
+                
+                <div class="summary-row">
+                    <span>Delivery Fee</span>
+                    <span>₱<span id="deliveryFee">0</span></span>
+                </div>
+                
+                <!-- Delivery Address -->
+                <div class="summary-section">
+                    <h4>Delivery Address</h4>
+                    <textarea id="deliveryAddress" placeholder="Enter delivery address" rows="2"></textarea>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="summary-section">
+                    <h4>Contact Number</h4>
+                    <input type="tel" id="contactNumber" placeholder="Enter phone number">
+                </div>
+
+                <!-- Delivery Method -->
+                <div class="summary-section">
+                    <h4>Delivery Method</h4>
+                    <select id="deliveryMethod" onchange="updateDeliveryTotals()">
+                        <option value="0">Standard Delivery (Free)</option>
+                        <option value="99">Express Delivery (+₱99)</option>
+                        <option value="0">Store Pickup (Free)</option>
+                    </select>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="summary-section">
+                    <h4>Payment Method</h4>
+                    <select id="paymentMethod">
+                        <option value="cod">Cash on Delivery</option>
+                        <option value="gcash">GCash</option>
+                        <option value="bank">Bank Transfer</option>
+                    </select>
+                </div>
+
+                <div class="summary-row total">
+                    <span>Subtotal</span>
+                    <span>₱<span id="cartSubtotal">0</span></span>
+                </div>
+                
+                <div class="summary-row">
+                    <span>Delivery Fee</span>
+                    <span>₱<span id="deliveryFee">0</span></span>
+                </div>
+                
+                <div class="summary-row final-total">
+                    <span>Total</span>
+                    <span>₱<span id="cartTotal">0</span></span>
+                </div>
+
+                <div class="summary-actions">
+                    <button id="checkoutBtn" onclick="proceedCheckout()" class="cart-checkout-btn">
+                        Proceed to Checkout
+                    </button>
+                    <button onclick="window.location.href='index.html'" class="continue-shopping-btn">
+                        ← Continue Shopping
+                    </button>
+                    <button onclick="clearCart()" class="clear-cart-btn">
+                        🗑 Clear Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script type="module" src="app.js"></script>
+    <script type="module" src="cart.js"></script>
+    
+    <!-- Fix checkout button function availability -->
+    <script>
+        // DIRECT IMPLEMENTATION - NO MODULE DEPENDENCIES
+        // These functions work immediately when buttons are clicked
+        
+        function closeCheckoutSuccessDirect() {
+            // Close success modal
+            const successOverlay = document.getElementById("checkoutSuccessOverlay");
+            const successModal = document.querySelector(".checkout-success-modal");
+            
+            if (successModal) successModal.classList.remove('active');
+            
+            setTimeout(() => {
+                if (successOverlay) successOverlay.classList.remove('active');
+                
+                // Clear cart and reset form
+                setTimeout(() => {
+                    localStorage.setItem("pc_store_cart", JSON.stringify([]));
+                    document.getElementById("deliveryAddress").value = "";
+                    document.getElementById("contactNumber").value = "";
+                    document.getElementById("deliveryMethod").value = "0";
+                    if (typeof updateDeliveryTotals === 'function') {
+                        updateDeliveryTotals();
+                    }
+                    
+                    // Refresh cart display
+                    if (window.renderCart) window.renderCart();
+                    if (window.updateCartCount) window.updateCartCount();
+                    
+                    // Redirect home
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 200);
+                }, 200);
+            }, 300);
+        }
+        
+        function closeCheckoutErrorDirect() {
+            // Close error modal
+            const errorOverlay = document.getElementById("checkoutErrorOverlay");
+            const errorModal = document.querySelector(".checkout-error-modal");
+            
+            if (errorModal) errorModal.classList.remove('active');
+            
+            setTimeout(() => {
+                if (errorOverlay) errorOverlay.classList.remove('active');
+            }, 200);
+        }
+        
+        // Attach listeners when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Success popup OK button
+            const successOkBtn = document.getElementById('successOkBtn');
+            if (successOkBtn) {
+                successOkBtn.addEventListener('click', closeCheckoutSuccessDirect);
+            }
+            
+            // Error popup OK button
+            const errorOkBtn = document.getElementById('errorOkBtn');
+            if (errorOkBtn) {
+                errorOkBtn.addEventListener('click', closeCheckoutErrorDirect);
+            }
+            
+            // Checkout button fallback
+            import('./cart.js').then(module => {
+                window.proceedCheckout = module.proceedCheckout;
+                
+                setTimeout(function() {
+                    const checkoutBtn = document.getElementById('checkoutBtn');
+                    if (checkoutBtn) {
+                        checkoutBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (window.proceedCheckout) {
+                                window.proceedCheckout();
+                            }
+                        });
+                    }
+                }, 100);
+            });
+        });
+    </script>
+
+    <script>
+        // Global user state
+        let currentUser = localStorage.getItem("storeUsername");
+        
+        // Check for existing login on cart page load
+        document.addEventListener("DOMContentLoaded", function() {
+            // Initialize authentication UI from app.js
+            if (currentUser) {
+                // Wait for app.js to load completely
+                const checkAuthFunction = setInterval(function() {
+                    if (typeof updateAuthUI === 'function') {
+                        clearInterval(checkAuthFunction);
+                        updateAuthUI();
+                    }
+                }, 50);
+                
+                // Fallback after 1 second if function still not available
+                setTimeout(function() {
+                    clearInterval(checkAuthFunction);
+                    if (typeof updateAuthUI !== 'function') {
+                        // Manually render auth UI if app.js functions not loaded
+                        renderCartAuthUI();
+                    }
+                }, 1000);
+            } else {
+                // Show login button immediately
+                const authSection = document.getElementById("auth-section");
+                authSection.innerHTML = `
+                    <button class="login-button" onclick="openLoginModal()">👤 Login</button>
+                `;
+            }
+            
+            // Load user profile data if available
+            function loadUserProfileData() {
+                const currentUser = localStorage.getItem("storeUsername");
+                if (currentUser) {
+                    const users = JSON.parse(localStorage.getItem('storeUsers') || '{}');
+                    const user = users[currentUser] || {};
+                    
+                    // Pre-fill address and phone fields if available (keep editable)
+                    if (user.address && user.address.length > 0) {
+                        document.getElementById("deliveryAddress").value = user.address;
+                    }
+                    if (user.phone && user.phone.length > 0) {
+                        document.getElementById("contactNumber").value = user.phone;
+                    }
+                }
+            }
+            
+            loadUserProfileData();
+            
+            // Listen for profile changes to sync fields
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'storeUsers' || e.key === 'storeUsername') {
+                    loadUserProfileData();
+                }
+            });
+            
+            import('./cart.js').then(module => {
+                module.renderCart();
+                module.updateCartCount();
+            });
+        });
+        
+        // Fallback auth UI renderer
+        function renderCartAuthUI() {
+            const authSection = document.getElementById("auth-section");
+            if (currentUser) {
+                const savedAvatar = localStorage.getItem(`userAvatar_${currentUser}`);
+                let avatarHTML = savedAvatar && savedAvatar.length > 0 
+                    ? `<img src="${savedAvatar}" alt="Profile">` 
+                    : '👤';
+                
+                authSection.innerHTML = `
+                    <div class="logged-in-user clickable-name" onclick="openProfile()">
+                        <div class="profile-avatar-header">
+                            ${avatarHTML}
+                        </div>
+                        <span class="profile-username-header">${currentUser}</span>
+                    </div>
+                `;
+            } else {
+                authSection.innerHTML = `
+                    <button class="login-button" onclick="openLoginModal()">👤 Login</button>
+                `;
+            }
+        }
+        
+        function updateDeliveryTotals() {
+            const deliveryMethod = document.getElementById("deliveryMethod");
+            const deliveryFee = parseInt(deliveryMethod.value) || 0;
+            const deliveryFeeElement = document.getElementById("deliveryFee");
+            
+            if (deliveryFeeElement) {
+                deliveryFeeElement.textContent = deliveryFee.toLocaleString();
+            }
+            
+            const cartSubtotal = document.getElementById("cartSubtotal");
+            const cartTotal = document.getElementById("cartTotal");
+            
+            if (cartSubtotal && cartTotal) {
+                const subtotal = parseInt(cartSubtotal.textContent.replace(/,/g, '')) || 0;
+                cartTotal.textContent = (subtotal + deliveryFee).toLocaleString();
+            }
+        }
+        
+        function clearCart() {
+            if (confirm("Are you sure you want to clear all items from your cart?")) {
+                localStorage.setItem("pc_store_cart", JSON.stringify([]));
+                import('./cart.js').then(module => {
+                    module.renderCart();
+                    module.updateCartCount();
+                });
+            }
+        }
+        
+        // Listen for profile avatar changes
+        window.addEventListener('storage', function(e) {
+            if (e.key && e.key.startsWith('userAvatar_') && currentUser) {
+                if (typeof updateAuthUI === 'function') {
+                    updateAuthUI();
+                }
+            }
+        });
+        
+        // Fix login modal functionality for cart page
+        if (typeof openLoginModal === 'undefined') {
+            window.openLoginModal = function() {
+                window.location.href = 'index.html?openLogin=true';
+            }
+        }
+        
+        // Fix profile page navigation
+        if (typeof openProfile === 'undefined') {
+            window.openProfile = function() {
+                window.location.href = 'profile.html';
+            }
+        }
+    </script>
+
+<!-- Checkout Success Modal -->
+    <div class="checkout-success-overlay" id="checkoutSuccessOverlay">
+      <div class="checkout-success-modal">
+        <div class="checkout-success-content">
+          <div class="success-icon">✓</div>
+          <h3>Thank you for your purchase!</h3>
+          <p>We will contact you soon.</p>
+          <button class="checkout-success-btn" id="successOkBtn">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checkout Error Modal -->
+    <div class="checkout-error-overlay" id="checkoutErrorOverlay">
+      <div class="checkout-error-modal">
+        <div class="checkout-error-content">
+          <div class="error-icon">⚠️</div>
+          <h3>Error</h3>
+          <p id="checkoutErrorMessage">An error occurred</p>
+          <button class="checkout-error-close-btn" id="errorOkBtn">OK</button>
+        </div>
+      </div>
+    </div>
+
+</body>
+</html>

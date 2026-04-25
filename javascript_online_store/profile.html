@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Profile - MRE-TechSolutions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- FULL STICKY HEADER WRAPPER -->
+<div class="sticky-header-wrapper">
+  <!-- STICKY HEADER -->
+  <div class="sticky-header">
+    <div class="header-left">
+      <h1>MRE-TechSolutions</h1>
+    </div>
+
+    <div class="header-center">
+      <div class="search-filters">
+        <input type="text" placeholder="Search products..." disabled>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="cart-button" onclick="window.location.href='index.html'">🏠 Back to Store</button>
+      <div id="auth-section"></div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION MENU -->
+  <div class="nav-menu">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="index.html" class="nav-link">Products</a>
+    <a href="index.html" class="nav-link">PC's</a>
+    <a href="index.html" class="nav-link">Piso WiFi</a>
+    <a href="#" class="nav-link active">Profile</a>
+  </div>
+</div>
+
+<!-- DASHBOARD LAYOUT -->
+<div class="dashboard-container">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-avatar">
+                <img id="sidebar-avatar-img" src="" alt="Avatar" class="avatar-img">
+                <span class="avatar-fallback">👤</span>
+            </div>
+            <h3 id="sidebar-username">Loading...</h3>
+            <p id="sidebar-email" class="sidebar-email">Loading...</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <button class="sidebar-link active" data-section="profile">
+                <span class="sidebar-icon">👤</span>
+                Profile Info
+            </button>
+            <button class="sidebar-link" data-section="orders">
+                <span class="sidebar-icon">📦</span>
+                My Orders
+            </button>
+            <button class="sidebar-link" data-section="favorites">
+                <span class="sidebar-icon">❤️</span>
+                Favorites
+            </button>
+            <button class="sidebar-link" onclick="window.location.href='index.html#cart'">
+                <span class="sidebar-icon">🛒</span>
+                Cart
+            </button>
+            <button class="sidebar-link" data-section="settings">
+                <span class="sidebar-icon">⚙️</span>
+                Settings
+            </button>
+            <button class="sidebar-link logout" onclick="performLogout()">
+                <span class="sidebar-icon">🚪</span>
+                Logout
+            </button>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+        <!-- PROFILE SECTION -->
+        <section class="dashboard-section active" id="section-profile">
+            <div class="glass-panel profile-header-panel">
+                <div class="profile-display-avatar">
+                    <img id="profile-avatar-preview" src="" alt="Profile Picture" class="profile-avatar-large">
+                    <span class="avatar-fallback-large">👤</span>
+                    <label class="avatar-upload-btn">
+                        <input type="file" id="avatar-upload" accept="image/*" style="display:none;">
+                        ✏️ Change Image
+                    </label>
+                </div>
+                <div class="profile-info">
+                    <h2 id="display-username-header">Loading...</h2>
+                    <p>Customer Account</p>
+                </div>
+            </div>
+
+            <div class="glass-panel profile-form-panel">
+                <div class="panel-header">
+                    <h3>Account Details</h3>
+                    <div class="panel-actions">
+                        <button class="btn-secondary" onclick="enableEditMode()" id="edit-profile-btn">✏️ Edit Profile</button>
+                    </div>
+                </div>
+
+                <div id="profile-view">
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label>First Name</label>
+                            <div class="field-value" id="display-firstname">-</div>
+                        </div>
+                        <div class="form-row">
+                            <label>Last Name</label>
+                            <div class="field-value" id="display-lastname">-</div>
+                        </div>
+                        <div class="form-row">
+                            <label>Email</label>
+                            <div class="field-value" id="display-email">-</div>
+                        </div>
+                        <div class="form-row">
+                            <label>Phone</label>
+                            <div class="field-value" id="display-phone">-</div>
+                        </div>
+                        <div class="form-row full-width">
+                            <label>Address</label>
+                            <div class="field-value" id="display-address">-</div>
+                        </div>
+                        <div class="form-row">
+                            <label>Postal Code</label>
+                            <div class="field-value" id="display-postal">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="profile-edit" style="display: none;">
+                    <form id="profile-form">
+                        <div class="form-grid">
+                            <div class="form-row">
+                                <label for="edit-firstname">First Name</label>
+                                <input type="text" id="edit-firstname" placeholder="Enter first name">
+                            </div>
+                            <div class="form-row">
+                                <label for="edit-lastname">Last Name</label>
+                                <input type="text" id="edit-lastname" placeholder="Enter last name">
+                            </div>
+                            <div class="form-row">
+                                <label for="edit-email">Email</label>
+                                <input type="email" id="edit-email" placeholder="Enter your email">
+                            </div>
+                            <div class="form-row">
+                                <label for="edit-phone">Phone</label>
+                                <input type="tel" id="edit-phone" placeholder="Enter your phone number">
+                            </div>
+                            <div class="form-row full-width">
+                                <label for="edit-address">Address</label>
+                                <textarea id="edit-address" placeholder="Enter your address" rows="3"></textarea>
+                            </div>
+                            <div class="form-row">
+                                <label for="edit-postal">Postal Code (Optional)</label>
+                                <input type="text" id="edit-postal" placeholder="Enter postal code">
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-cancel" onclick="disableEditMode()">Cancel</button>
+                            <button type="submit" class="btn-primary">💾 Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ORDERS SECTION -->
+        <section class="dashboard-section" id="section-orders">
+            <div class="glass-panel">
+                <h3>My Orders</h3>
+                <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <h4>No orders yet</h4>
+                    <p>Your order history will appear here</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAVORITES SECTION -->
+        <section class="dashboard-section" id="section-favorites">
+            <div class="glass-panel">
+                <h3>My Favorites</h3>
+                <div class="empty-state">
+                    <div class="empty-icon">❤️</div>
+                    <h4>No favorites saved</h4>
+                    <p>Save products you like to your favorites list</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS SECTION -->
+        <section class="dashboard-section" id="section-settings">
+            <div class="glass-panel">
+                <h3>Account Settings</h3>
+                <div class="empty-state">
+                    <div class="empty-icon">⚙️</div>
+                    <h4>Coming Soon</h4>
+                    <p>Account settings will be available in a future update</p>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+// Get current user
+let currentUser = localStorage.getItem("storeUsername");
+let userAvatar = localStorage.getItem(`userAvatar_${currentUser}`) || '';
+
+// Load user data
+function loadProfile() {
+    if (!currentUser) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    const users = JSON.parse(localStorage.getItem('storeUsers') || '{}');
+    const user = users[currentUser] || {};
+
+    // Update header displays
+    document.getElementById('sidebar-username').textContent = currentUser;
+    document.getElementById('display-username-header').textContent = currentUser;
+    document.getElementById('sidebar-email').textContent = user.email || 'No email set';
+    
+    // Update view fields
+    document.getElementById('display-firstname').textContent = user.firstName || 'Not set';
+    document.getElementById('display-lastname').textContent = user.lastName || 'Not set';
+    document.getElementById('display-email').textContent = user.email || 'Not set';
+    document.getElementById('display-phone').textContent = user.phone || 'Not set';
+    document.getElementById('display-address').textContent = user.address || 'Not set';
+    document.getElementById('display-postal').textContent = user.postalCode || 'Not set';
+
+    // Update edit fields
+    document.getElementById('edit-firstname').value = user.firstName || '';
+    document.getElementById('edit-lastname').value = user.lastName || '';
+    document.getElementById('edit-email').value = user.email || '';
+    document.getElementById('edit-phone').value = user.phone || '';
+    document.getElementById('edit-address').value = user.address || '';
+    document.getElementById('edit-postal').value = user.postalCode || '';
+
+    // Load avatar
+    loadAvatar();
+}
+
+// Avatar upload handler
+document.getElementById('avatar-upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            userAvatar = event.target.result;
+            localStorage.setItem(`userAvatar_${currentUser}`, userAvatar);
+            loadAvatar();
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+function loadAvatar() {
+    const savedAvatar = localStorage.getItem(`userAvatar_${currentUser}`);
+    const avatarImg = document.getElementById('sidebar-avatar-img');
+    const profileImg = document.getElementById('profile-avatar-preview');
+    
+    if (savedAvatar) {
+        avatarImg.src = savedAvatar;
+        profileImg.src = savedAvatar;
+        avatarImg.style.display = 'block';
+        profileImg.style.display = 'block';
+        document.querySelector('.sidebar-avatar .avatar-fallback').style.display = 'none';
+        document.querySelector('.profile-display-avatar .avatar-fallback-large').style.display = 'none';
+    }
+}
+
+// Enable edit mode
+function enableEditMode() {
+    document.getElementById('profile-view').style.display = 'none';
+    document.getElementById('profile-edit').style.display = 'block';
+    document.getElementById('edit-profile-btn').style.display = 'none';
+}
+
+// Disable edit mode
+function disableEditMode() {
+    document.getElementById('profile-view').style.display = 'block';
+    document.getElementById('profile-edit').style.display = 'none';
+    document.getElementById('edit-profile-btn').style.display = 'inline-block';
+    loadProfile();
+}
+
+// Save profile changes
+function saveProfile(e) {
+    e.preventDefault();
+    
+    const users = JSON.parse(localStorage.getItem('storeUsers') || '{}');
+    
+    users[currentUser] = {
+        ...users[currentUser],
+        firstName: document.getElementById('edit-firstname').value,
+        lastName: document.getElementById('edit-lastname').value,
+        email: document.getElementById('edit-email').value,
+        phone: document.getElementById('edit-phone').value,
+        address: document.getElementById('edit-address').value,
+        postalCode: document.getElementById('edit-postal').value
+    };
+
+    localStorage.setItem('storeUsers', JSON.stringify(users));
+    disableEditMode();
+    alert('Profile saved successfully!');
+}
+
+// Logout function
+function performLogout() {
+    localStorage.removeItem("storeUsername");
+    window.location.href = 'index.html';
+}
+
+// Sidebar navigation
+document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
+    link.addEventListener('click', function() {
+        const sectionId = this.getAttribute('data-section');
+        
+        // Update active states
+        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        
+        document.querySelectorAll('.dashboard-section').forEach(s => s.classList.remove('active'));
+        document.getElementById(`section-${sectionId}`).classList.add('active');
+    });
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadProfile();
+    document.getElementById('profile-form').addEventListener('submit', saveProfile);
+});
+</script>
+
+</body>
+</html>
